@@ -8,9 +8,10 @@ import {
     UserOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { Breadcrumb, Layout, Menu, Card, Input, Button, theme } from 'antd';
+import { Breadcrumb, Layout, Menu, Card, Input, Button, theme, Typography } from 'antd';
 
 const { Header, Content, Footer, Sider } = Layout;
+const { Text } = Typography;
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -55,6 +56,8 @@ const App: React.FC = () => {
         cvc: '',
         cardholderName: '',
     });
+    const [submittedData, setSubmittedData] = useState<CreditCard | null>(null);
+    const [selectedMenuItem, setSelectedMenuItem] = useState<string>('1');
 
     const {
         token: { colorBgContainer, borderRadiusLG },
@@ -84,13 +87,30 @@ const App: React.FC = () => {
 
         // Display an alert
         alert('Card data submitted! Check the console for details.');
+
+        // Set submitted data for rendering only on Option 1
+        if (selectedMenuItem === '1') {
+            setSubmittedData({ ...cardData });
+        } else {
+            setSubmittedData(null);
+        }
+    };
+
+    const handleMenuSelect = ({ key }: { key: React.Key }) => {
+        setSelectedMenuItem(key.toString());
     };
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
             <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
                 <div className="demo-logo-vertical" />
-                <Menu theme="dark" defaultSelectedKeys={['1']} mode="inline" items={items as any} />
+                <Menu
+                    theme="dark"
+                    defaultSelectedKeys={['1']}
+                    mode="inline"
+                    items={items as any}
+                    onSelect={handleMenuSelect}
+                />
             </Sider>
             <Layout>
                 <Header style={{ padding: 0, background: colorBgContainer }} />
@@ -107,31 +127,51 @@ const App: React.FC = () => {
                             borderRadius: borderRadiusLG,
                         }}
                     >
-                        <Card title={cardData.title}>
-                            <Input
-                                placeholder="Card Number"
-                                value={cardData.number}
-                                onChange={(e) => handleCardNumberChange(e.target.value)}
-                            />
-                            <Input
-                                placeholder="CVC"
-                                value={cardData.cvc}
-                                onChange={(e) => handleCVCChange(e.target.value)}
-                            />
-                            <Input
-                                placeholder="Cardholder Name"
-                                value={cardData.cardholderName}
-                                onChange={(e) => handleCardholderNameChange(e.target.value)}
-                            />
-                        </Card>
-                        {/* Add the submit button */}
-                        <Button
-                            type="primary"
-                            onClick={handleSubmit}
-                            style={{ position: 'absolute', bottom: 75, right: 625 }}
-                        >
-                            Submit
-                        </Button>
+                        {selectedMenuItem === '1' ? (
+                            <Card title={cardData.title}>
+                                <Input
+                                    placeholder="Card Number"
+                                    value={cardData.number}
+                                    onChange={(e) => handleCardNumberChange(e.target.value)}
+                                />
+                                <Input
+                                    placeholder="CVC"
+                                    value={cardData.cvc}
+                                    onChange={(e) => handleCVCChange(e.target.value)}
+                                />
+                                <Input
+                                    placeholder="Cardholder Name"
+                                    value={cardData.cardholderName}
+                                    onChange={(e) => handleCardholderNameChange(e.target.value)}
+                                />
+                                {/* Add the submit button */}
+                                <Button
+                                    type="primary"
+                                    onClick={handleSubmit}
+                                    style={{ marginTop: 16 }}
+                                >
+                                    Submit
+                                </Button>
+                            </Card>
+                        ) : (
+                            <Text strong>{`Pinzari Dan. CR-221`}</Text>
+                        )}
+
+                        {/* Display submitted data only on Option 1 */}
+                        {selectedMenuItem === '1' && submittedData && (
+                            <div style={{ marginTop: 20 }}>
+                                <Text strong>Submitted Data:</Text>
+                                <div>
+                                    <Text>Card Number: {submittedData.number}</Text>
+                                </div>
+                                <div>
+                                    <Text>CVC: {submittedData.cvc}</Text>
+                                </div>
+                                <div>
+                                    <Text>Cardholder Name: {submittedData.cardholderName}</Text>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </Content>
                 <Footer style={{ textAlign: 'center' }}>
