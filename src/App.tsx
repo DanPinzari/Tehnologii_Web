@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './index.css';
 import {
     DesktopOutlined,
@@ -9,96 +9,86 @@ import {
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Breadcrumb, Layout, Menu, Card, Input, Button, theme, Typography } from 'antd';
+import { CredCard, ExtendedCreditCard } from './AppLab4';
 
 const { Header, Content, Footer, Sider } = Layout;
 const { Text } = Typography;
 
-type MenuItem = Required<MenuProps>['items'][number];
-
-interface CreditCard {
-    title: string;
-    number: string;
-    cvc: string;
-    cardholderName: string;
+// Definim interfața pentru un element de meniu
+interface MenuItem {
+    key: string;
+    label: string;
+    icon?: React.ReactNode;
+    children?: MenuItem[];
 }
-
-function getItem(
-    label: React.ReactNode,
-    key: React.Key,
-    icon?: React.ReactNode,
-    children?: MenuItem[],
-): MenuItem {
-    return {
-        key,
-        icon,
-        children,
-        label,
-    } as MenuItem;
-}
-
-const items: MenuItem[] = [
-    getItem('Option 1', '1', <PieChartOutlined />),
-    getItem('Option 2', '2', <DesktopOutlined />),
-    getItem('User', 'sub1', <UserOutlined />, [
-        getItem('Tom', '3'),
-        getItem('Bill', '4'),
-        getItem('Alex', '5'),
-    ]),
-    getItem('Team', 'sub2', <TeamOutlined />, [getItem('Team 1', '6'), getItem('Team 2', '8')]),
-    getItem('Files', '9', <FileOutlined />),
-];
 
 const App: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
-    const [cardData, setCardData] = useState<CreditCard>({
+    const [cardData, setCardData] = useState<ExtendedCreditCard>({
         title: 'Card 1',
-        number: '',
+        number: 'dan',
         cvc: '',
         cardholderName: '',
+        expirationDate: '',
+        cardType: '',
+        issuingBank: ''
     });
-    const [submittedData, setSubmittedData] = useState<CreditCard | null>(null);
+    const [submittedData, setSubmittedData] = useState<ExtendedCreditCard | null>(null); // Inițial, nu avem datele introduse
     const [selectedMenuItem, setSelectedMenuItem] = useState<string>('1');
 
-    const {
-        token: { colorBgContainer, borderRadiusLG },
-    } = theme.useToken();
+    const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
 
-    const handleCardNumberChange = (value: string) => {
-        // Allow only numbers and limit to 12 characters
-        const sanitizedValue = value.replace(/[^0-9]/g, '').slice(0, 12);
-        setCardData((prevCardData) => ({ ...prevCardData, number: sanitizedValue }));
-    };
+    // Folosim useEffect pentru a seta submittedData la încărcarea componentei
+    useEffect(() => {
+        setSubmittedData({
+            title: cardData.title,
+            number: 'sda',
+            cvc: '',
+            cardholderName: 'dan',
+            expirationDate: '',
+            cardType: '',
+            issuingBank: ''
+        });
+    }, []);
 
-    const handleCVCChange = (value: string) => {
-        // Allow only numbers and limit to 12 characters
-        const sanitizedValue = value.replace(/[^0-9]/g, '').slice(0, 12);
-        setCardData((prevCardData) => ({ ...prevCardData, cvc: sanitizedValue }));
-    };
 
-    const handleCardholderNameChange = (value: string) => {
-        // Allow only letters
-        const sanitizedValue = value.replace(/[^a-zA-Z\s]/g, '');
-        setCardData((prevCardData) => ({ ...prevCardData, cardholderName: sanitizedValue }));
-    };
-
+    // Funcție pentru gestionarea evenimentului de submit
     const handleSubmit = () => {
-        // Log the cardData to the console
         console.log('Submitted Card Data:', cardData);
-
-        // Display an alert
         alert('Card data submitted! Check the console for details.');
-
-        // Set submitted data for rendering only on Option 1
-        if (selectedMenuItem === '1') {
-            setSubmittedData({ ...cardData });
-        } else {
-            setSubmittedData(null);
-        }
+        setSubmittedData({ ...cardData });
     };
 
+    // Funcție pentru gestionarea selectării unui element de meniu
     const handleMenuSelect = ({ key }: { key: React.Key }) => {
         setSelectedMenuItem(key.toString());
     };
+
+    // Definim elementele de meniu
+    const items: MenuItem[] = [
+        { key: '1', label: 'Option 1', icon: <PieChartOutlined /> },
+        { key: '2', label: 'Option 2', icon: <DesktopOutlined /> },
+        {
+            key: 'sub1',
+            label: 'User',
+            icon: <UserOutlined />,
+            children: [
+                { key: '3', label: 'Tom' },
+                { key: '4', label: 'Bill' },
+                { key: '5', label: 'Alex' }
+            ]
+        },
+        {
+            key: 'sub2',
+            label: 'Team',
+            icon: <TeamOutlined />,
+            children: [
+                { key: '6', label: 'Team 1' },
+                { key: '8', label: 'Team 2' }
+            ]
+        },
+        { key: '9', label: 'Files', icon: <FileOutlined /> }
+    ];
 
     return (
         <Layout style={{ minHeight: '100vh' }}>
@@ -108,7 +98,7 @@ const App: React.FC = () => {
                     theme="dark"
                     defaultSelectedKeys={['1']}
                     mode="inline"
-                    items={items as any}
+                    items={items}
                     onSelect={handleMenuSelect}
                 />
             </Sider>
@@ -132,19 +122,34 @@ const App: React.FC = () => {
                                 <Input
                                     placeholder="Card Number"
                                     value={cardData.number}
-                                    onChange={(e) => handleCardNumberChange(e.target.value)}
+                                    onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
                                 />
                                 <Input
                                     placeholder="CVC"
                                     value={cardData.cvc}
-                                    onChange={(e) => handleCVCChange(e.target.value)}
+                                    onChange={(e) => setCardData({ ...cardData, cvc: e.target.value })}
                                 />
                                 <Input
                                     placeholder="Cardholder Name"
                                     value={cardData.cardholderName}
-                                    onChange={(e) => handleCardholderNameChange(e.target.value)}
+                                    onChange={(e) => setCardData({ ...cardData, cardholderName: e.target.value })}
                                 />
-                                {/* Add the submit button */}
+                                <Input
+                                    placeholder="Expiration Date"
+                                    value={cardData.expirationDate}
+                                    onChange={(e) => setCardData({ ...cardData, expirationDate: e.target.value })}
+                                />
+                                <Input
+                                    placeholder="Card Type"
+                                    value={cardData.cardType}
+                                    onChange={(e) => setCardData({ ...cardData, cardType: e.target.value })}
+                                />
+                                <Input
+                                    placeholder="Issuing Bank"
+                                    value={cardData.issuingBank}
+                                    onChange={(e) => setCardData({ ...cardData, issuingBank: e.target.value })}
+                                />
+                                {/* Adăugăm butonul de submit */}
                                 <Button
                                     type="primary"
                                     onClick={handleSubmit}
@@ -157,7 +162,7 @@ const App: React.FC = () => {
                             <Text strong>{`Pinzari Dan. CR-221`}</Text>
                         )}
 
-                        {/* Display submitted data only on Option 1 */}
+                        {/* Afișăm datele introduse doar pe Option 1 */}
                         {selectedMenuItem === '1' && submittedData && (
                             <div style={{ marginTop: 20 }}>
                                 <Text strong>Submitted Data:</Text>
@@ -169,6 +174,15 @@ const App: React.FC = () => {
                                 </div>
                                 <div>
                                     <Text>Cardholder Name: {submittedData.cardholderName}</Text>
+                                </div>
+                                <div>
+                                    <Text>Expiration Date: {submittedData.expirationDate}</Text>
+                                </div>
+                                <div>
+                                    <Text>Card Type: {submittedData.cardType}</Text>
+                                </div>
+                                <div>
+                                    <Text>Issuing Bank: {submittedData.issuingBank}</Text>
                                 </div>
                             </div>
                         )}
