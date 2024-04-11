@@ -4,17 +4,16 @@ import {
     DesktopOutlined,
     FileOutlined,
     PieChartOutlined,
-    TeamOutlined,
-    UserOutlined,
+    DeleteOutlined,
+    EditOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Breadcrumb, Layout, Menu, Card, Input, Button, theme, Typography } from 'antd';
-import { CredCard, ExtendedCreditCard } from './AppLab4';
+import { CredCard } from './AppLab4';
 
 const { Header, Content, Footer, Sider } = Layout;
 const { Text } = Typography;
 
-// Definim interfața pentru un element de meniu
 interface MenuItem {
     key: string;
     label: string;
@@ -24,69 +23,88 @@ interface MenuItem {
 
 const App: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
-    const [cardData, setCardData] = useState<ExtendedCreditCard>({
+    const [cardData, setCardData] = useState<CredCard>({
         title: 'Card 1',
-        number: 'dan',
+        number: '',
         cvc: '',
         cardholderName: '',
-        expirationDate: '',
-        cardType: '',
-        issuingBank: ''
+        expirationDate: ''
     });
-    const [submittedData, setSubmittedData] = useState<ExtendedCreditCard | null>(null); // Inițial, nu avem datele introduse
+    const [submittedData, setSubmittedData] = useState<CredCard[]>([]);
     const [selectedMenuItem, setSelectedMenuItem] = useState<string>('1');
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [deleteLoading, setDeleteLoading] = useState<boolean[]>(Array(submittedData.length).fill(false));
 
     const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
 
-    // Folosim useEffect pentru a seta submittedData la încărcarea componentei
-    useEffect(() => {
-        setSubmittedData({
-            title: cardData.title,
-            number: 'sda',
-            cvc: '',
-            cardholderName: 'dan',
-            expirationDate: '',
-            cardType: '',
-            issuingBank: ''
-        });
-    }, []);
-
-
-    // Funcție pentru gestionarea evenimentului de submit
     const handleSubmit = () => {
         console.log('Submitted Card Data:', cardData);
         alert('Card data submitted! Check the console for details.');
-        setSubmittedData({ ...cardData });
+        const updatedSubmittedData = [...submittedData, { ...cardData }];
+        setSubmittedData(updatedSubmittedData);
+        localStorage.setItem('submittedData', JSON.stringify(updatedSubmittedData));
+        setCardData({
+            title: '',
+            number: '',
+            cvc: '',
+            cardholderName: '',
+            expirationDate: ''
+        });
     };
 
-    // Funcție pentru gestionarea selectării unui element de meniu
+    const handleDeleteCard = (index: number) => {
+        const updatedDeleteLoading = [...deleteLoading];
+        updatedDeleteLoading[index] = true;
+        setDeleteLoading(updatedDeleteLoading);
+
+        setTimeout(() => {
+            const updatedSubmittedData = submittedData.filter((_, i) => i !== index);
+            setSubmittedData(updatedSubmittedData);
+            localStorage.setItem('submittedData', JSON.stringify(updatedSubmittedData));
+            const updatedDeleteLoading = [...deleteLoading];
+            updatedDeleteLoading[index] = false;
+            setDeleteLoading(updatedDeleteLoading);
+        }, 2000); // Timeout de 2 secunde
+    };
+
+    const handleEditCard = (index: number) => {
+        setEditingIndex(index);
+        const cardToEdit = submittedData[index];
+        setCardData(cardToEdit);
+    };
+
+    const handleSaveEdit = () => {
+        if (editingIndex !== null) {
+            const updatedSubmittedData = [...submittedData];
+            updatedSubmittedData[editingIndex] = { ...cardData };
+            setSubmittedData(updatedSubmittedData);
+            localStorage.setItem('submittedData', JSON.stringify(updatedSubmittedData));
+            setEditingIndex(null);
+            setCardData({
+                title: '',
+                number: '',
+                cvc: '',
+                cardholderName: '',
+                expirationDate: ''
+            });
+        }
+    };
+
     const handleMenuSelect = ({ key }: { key: React.Key }) => {
         setSelectedMenuItem(key.toString());
     };
 
-    // Definim elementele de meniu
+    useEffect(() => {
+        const storedSubmittedData = localStorage.getItem('submittedData');
+
+        if (storedSubmittedData) {
+            setSubmittedData(JSON.parse(storedSubmittedData));
+        }
+    }, []);
+
     const items: MenuItem[] = [
         { key: '1', label: 'Option 1', icon: <PieChartOutlined /> },
         { key: '2', label: 'Option 2', icon: <DesktopOutlined /> },
-        {
-            key: 'sub1',
-            label: 'User',
-            icon: <UserOutlined />,
-            children: [
-                { key: '3', label: 'Tom' },
-                { key: '4', label: 'Bill' },
-                { key: '5', label: 'Alex' }
-            ]
-        },
-        {
-            key: 'sub2',
-            label: 'Team',
-            icon: <TeamOutlined />,
-            children: [
-                { key: '6', label: 'Team 1' },
-                { key: '8', label: 'Team 2' }
-            ]
-        },
         { key: '9', label: 'Files', icon: <FileOutlined /> }
     ];
 
@@ -117,39 +135,28 @@ const App: React.FC = () => {
                             borderRadius: borderRadiusLG,
                         }}
                     >
-                        {selectedMenuItem === '1' ? (
+                        {selectedMenuItem === '1' && (
                             <Card title={cardData.title}>
                                 <Input
                                     placeholder="Card Number"
                                     value={cardData.number}
-                                    onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
+                                    onChange={(e) => setCardData({...cardData, number: e.target.value })}
                                 />
                                 <Input
                                     placeholder="CVC"
                                     value={cardData.cvc}
-                                    onChange={(e) => setCardData({ ...cardData, cvc: e.target.value })}
+                                    onChange={(e) => setCardData({...cardData, cvc: e.target.value })}
                                 />
                                 <Input
                                     placeholder="Cardholder Name"
                                     value={cardData.cardholderName}
-                                    onChange={(e) => setCardData({ ...cardData, cardholderName: e.target.value })}
+                                    onChange={(e) => setCardData({...cardData, cardholderName: e.target.value })}
                                 />
                                 <Input
                                     placeholder="Expiration Date"
                                     value={cardData.expirationDate}
-                                    onChange={(e) => setCardData({ ...cardData, expirationDate: e.target.value })}
+                                    onChange={(e) => setCardData({...cardData, expirationDate: e.target.value })}
                                 />
-                                <Input
-                                    placeholder="Card Type"
-                                    value={cardData.cardType}
-                                    onChange={(e) => setCardData({ ...cardData, cardType: e.target.value })}
-                                />
-                                <Input
-                                    placeholder="Issuing Bank"
-                                    value={cardData.issuingBank}
-                                    onChange={(e) => setCardData({ ...cardData, issuingBank: e.target.value })}
-                                />
-                                {/* Adăugăm butonul de submit */}
                                 <Button
                                     type="primary"
                                     onClick={handleSubmit}
@@ -158,38 +165,79 @@ const App: React.FC = () => {
                                     Submit
                                 </Button>
                             </Card>
-                        ) : (
-                            <Text strong>{`Pinzari Dan. CR-221`}</Text>
                         )}
-
-                        {/* Afișăm datele introduse doar pe Option 1 */}
-                        {selectedMenuItem === '1' && submittedData && (
-                            <div style={{ marginTop: 20 }}>
-                                <Text strong>Submitted Data:</Text>
-                                <div>
-                                    <Text>Card Number: {submittedData.number}</Text>
-                                </div>
-                                <div>
-                                    <Text>CVC: {submittedData.cvc}</Text>
-                                </div>
-                                <div>
-                                    <Text>Cardholder Name: {submittedData.cardholderName}</Text>
-                                </div>
-                                <div>
-                                    <Text>Expiration Date: {submittedData.expirationDate}</Text>
-                                </div>
-                                <div>
-                                    <Text>Card Type: {submittedData.cardType}</Text>
-                                </div>
-                                <div>
-                                    <Text>Issuing Bank: {submittedData.issuingBank}</Text>
-                                </div>
+                        {selectedMenuItem === '2' && (
+                            <div>
+                                {submittedData.map((submittedCard, index) => (
+                                    <Card key={index} title={`Submitted Card ${index + 1}`}>
+                                        <div>
+                                            <Text>Card Number: {submittedCard.number}</Text>
+                                        </div>
+                                        <div>
+                                            <Text>CVC: {submittedCard.cvc}</Text>
+                                        </div>
+                                        <div>
+                                            <Text>Cardholder Name: {submittedCard.cardholderName}</Text>
+                                        </div>
+                                        <div>
+                                            <Text>Expiration Date: {submittedCard.expirationDate}</Text>
+                                        </div>
+                                        <Button
+                                            type="default"
+                                            icon={<EditOutlined />}
+                                            onClick={() => handleEditCard(index)}
+                                            style={{ marginTop: 16, marginRight: 8 }}
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            danger
+                                            icon={<DeleteOutlined />}
+                                            onClick={() => handleDeleteCard(index)}
+                                            loading={deleteLoading[index]}
+                                            style={{ marginTop: 16 }}
+                                        >
+                                            Delete
+                                        </Button>
+                                    </Card>
+                                ))}
+                                {editingIndex !== null && (
+                                    <Card title="Edit Card">
+                                        <Input
+                                            placeholder="Card Number"
+                                            value={cardData.number}
+                                            onChange={(e) => setCardData({...cardData, number: e.target.value })}
+                                        />
+                                        <Input
+                                            placeholder="CVC"
+                                            value={cardData.cvc}
+                                            onChange={(e) => setCardData({...cardData, cvc: e.target.value })}
+                                        />
+                                        <Input
+                                            placeholder="Cardholder Name"
+                                            value={cardData.cardholderName}
+                                            onChange={(e) => setCardData({...cardData, cardholderName: e.target.value })}
+                                        />
+                                        <Input
+                                            placeholder="Expiration Date"
+                                            value={cardData.expirationDate}
+                                            onChange={(e) => setCardData({...cardData, expirationDate: e.target.value })}
+                                        />
+                                        <Button
+                                            type="primary"
+                                            onClick={handleSaveEdit}
+                                            style={{ marginTop: 16 }}
+                                        >
+                                            Save
+                                        </Button>
+                                    </Card>
+                                )}
                             </div>
                         )}
                     </div>
                 </Content>
                 <Footer style={{ textAlign: 'center' }}>
-                    Ant Design ©{new Date().getFullYear()} Created by Ant UED
+                    Dan {new Date().getFullYear()} CR-221
                 </Footer>
             </Layout>
         </Layout>
